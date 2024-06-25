@@ -7,7 +7,6 @@
 
 // Funções para movimentação de objetos
 void moveRobo(cpBody* body, void* data);
-void moveBola(cpBody* body, void* data);
 
 // Prototipos
 void initCM();
@@ -73,7 +72,7 @@ void initCM()
     //   - ponteiro para a função de movimentação (chamada a cada passo, pode ser NULL)
     //   - coeficiente de fricção
     //   - coeficiente de elasticidade
-    ballBody = newCircle(cpv(512,350), 8, 1, "small_football.png", moveBola, 0.2, 1);
+    ballBody = newCircle(cpv(512,350), 8, 1, "small_football.png", NULL, 0.2, 1);
 
     // ... e um robô de exemplo
     robotBody = newCircle(cpv(50,350), 20, 5, "ship1.png", moveRobo, 0.2, 0.5);
@@ -109,15 +108,7 @@ void moveRobo(cpBody* body, void* data)
     cpBodyApplyImpulseAtWorldPoint(body, delta, robotPos);
 }
 
-// Exemplo: move a bola aleatoriamente
-void moveBola(cpBody* body, void* data)
-{
-    // TODO: Remove this, the ball is only moved by robots
-    // Sorteia um impulso entre -10 e 10, para x e y
-    //cpVect impulso = cpv(rand()%20-10,rand()%20-10);
-    // E aplica na bola
-    //cpBodyApplyImpulseAtWorldPoint(body, impulso, cpBodyGetPosition(body));
-}
+
 
 // Libera memória ocupada por cada corpo, forma e ambiente
 // Acrescente mais linhas caso necessário

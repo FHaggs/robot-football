@@ -132,21 +132,22 @@ void moveAtacante(cpBody* body, void* data)
     pos.y = -robotPos.y;
     cpVect delta;
     // printf("forca: %f \n", delta.x);
-    if (is_near(cos, -1, 0.2)){
+    if (is_near(cos, -0.8, 0.2)){
         // Caso de chute ao gol
         delta = cpvadd(ballPos,pos);
-        printf("NEAR -1 ANGULO: %f\n", cos);
+        printf("Near CHUTE:x=%d \n",delta.x);
     }
-    else if(is_near(cos, 0, 0.2)){
+    else if(is_near(cos, 0, 0.8)){
         cpVect rearrange;
         rearrange.x = -300;
         rearrange.y = 0;
         delta = cpvadd(delta, rearrange);
-        printf("NEAR 0 ANGULO: %f\n", cos);
+        delta = cpvadd(ballPos,pos);
+        printf("Near 0:x=%d \n",delta.x);
     }
-    else if(is_near(cos, 1, 0.2)){
+    else{
         delta = cpvadd(delta, meioCampoPos);
-        printf("NEAR 1 ANGULO: %f\n", cos);
+        printf("Go home...:x=%d \n",delta.x);
     }
 
     // Limita o impulso em 20 unidades

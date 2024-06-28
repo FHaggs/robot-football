@@ -1,12 +1,14 @@
 #include <math.h>
 #include <chipmunk.h>
 #include <SOIL.h>
+#include <stdio.h>
+
 
 // Rotinas para acesso da OpenGL
 #include "opengl.h"
 
 // Funções para movimentação de objetos
-void moveRobo(cpBody* body, void* data);
+void moveAtacante(cpBody* body, void* data);
 
 // Prototipos
 void initCM();
@@ -75,13 +77,19 @@ void initCM()
     ballBody = newCircle(cpv(512,350), 8, 1, "small_football.png", NULL, 0.2, 1);
 
     // ... e um robô de exemplo
-    robotBody = newCircle(cpv(50,350), 20, 5, "ship1.png", moveRobo, 0.2, 0.5);
+    robotBody = newCircle(cpv(50,350), 20, 5, "ship1.png", moveAtacante, 0.2, 0.5);
     // TODO: Create all robots
 }
 
+int is_near(float value, float target, float offset) {
+    if ((value >= target - offset) && (value <= target + offset)) {
+        return 1;
+    }
+    return 0;
+}
 // Exemplo de função de movimentação: move o robô em direção à bola
 // TODO: Create different funcs to move all types of robots 
-void moveRobo(cpBody* body, void* data)
+void moveAtacante(cpBody* body, void* data)
 {
     // Veja como obter e limitar a velocidade do robô...
     cpVect vel = cpBodyGetVelocity(body);
@@ -95,15 +103,54 @@ void moveRobo(cpBody* body, void* data)
     // Obtém a posição do robô e da bola...
     cpVect robotPos = cpBodyGetPosition(body);
     cpVect ballPos  = cpBodyGetPosition(ballBody);
+    cpVect goleiraPos;
+    goleiraPos.x = LARGURA_JAN - 10;
+    goleiraPos.y = ALTURA_JAN / 2;
 
+    // Meio de campo
+    cpVect meioCampoPos;
+    meioCampoPos.x = LARGURA_JAN / 2;
+    meioCampoPos.y = ALTURA_JAN / 2;
+    // 
+    cpVect u;
+    u.x = robotPos.x - ballPos.x;
+    u.y = robotPos.y - ballPos.y;
+
+    cpVect v;
+    v.x = goleiraPos.x - ballPos.x;
+    v.y = goleiraPos.y - ballPos.y;
+
+    double escalar = u.x * v.x + u.y * v.y;
+    double u_abs = sqrt(pow(u.x, 2) + pow(u.y, 2));
+    double v_abs = sqrt(pow(v.x, 2) + pow(v.y, 2));
+
+    double cos = escalar / (u_abs * v_abs);
+    
     // Calcula um vetor do robô à bola (DELTA = B - R)
     cpVect pos = robotPos;
     pos.x = -robotPos.x;
     pos.y = -robotPos.y;
-    cpVect delta = cpvadd(ballPos,pos);
+    cpVect delta;
+    // printf("forca: %f \n", delta.x);
+    if (is_near(cos, -1, 0.2)){
+        // Caso de chute ao gol
+        delta = cpvadd(ballPos,pos);
+        printf("NEAR -1 ANGULO: %f\n", cos);
+    }
+    else if(is_near(cos, 0, 0.2)){
+        cpVect rearrange;
+        rearrange.x = -300;
+        rearrange.y = 0;
+        delta = cpvadd(delta, rearrange);
+        printf("NEAR 0 ANGULO: %f\n", cos);
+    }
+    else if(is_near(cos, 1, 0.2)){
+        delta = cpvadd(delta, meioCampoPos);
+        printf("NEAR 1 ANGULO: %f\n", cos);
+    }
 
     // Limita o impulso em 20 unidades
-    delta = cpvmult(cpvnormalize(delta),20);
+    delta = cpvmult(cpvnormalize(delta), 10);
     // Finalmente, aplica impulso no robô
     cpBodyApplyImpulseAtWorldPoint(body, delta, robotPos);
 }

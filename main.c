@@ -9,6 +9,21 @@
 
 // Funções para movimentação de objetos
 void moveAtacante(cpBody* body, void* data);
+void moveDefensor(cpBody* body, void* data);
+void moveGoalie(cpBody* body, void* data);
+
+typedef enum {
+    RIGHT,
+    LEFT
+} time;
+
+// Abstração maior de uma struct quem contem um body e outros metadados
+typedef struct {
+    cpBody* body;
+    cpVect resting_pos;
+    time time;
+} jogador;
+
 
 // Prototipos
 void initCM();
@@ -37,9 +52,13 @@ cpShape* leftWall, *rightWall, *topWall, *bottomWall;
 cpBody* ballBody;
 
 
-// Um robô
-// TODO: More robots!!
+// Robots
+cpBody* goalie;
 cpBody* robotBody;
+cpBody* defender2;
+cpBody* defender3;
+cpBody* striker1;
+cpBody* striker2;
 
 // Cada passo de simulação é 1/60 seg.
 cpFloat timeStep = 1.0/60.0;
@@ -76,9 +95,15 @@ void initCM()
     //   - coeficiente de elasticidade
     ballBody = newCircle(cpv(512,350), 8, 1, "small_football.png", NULL, 0.2, 1);
 
-    // ... e um robô de exemplo
-    robotBody = newCircle(cpv(50,350), 20, 5, "ship1.png", moveAtacante, 0.2, 0.5);
-    // TODO: Create all robots
+    // Creating goalkeeper
+    goalie = newCircle(cpv(50, ALTURA_JAN / 2), 20, 5, "ship1.png", moveGoalie, 0.2, 0.5);
+    // Creating defenders
+    robotBody = newCircle(cpv(150, 200), 20, 5, "ship1.png", moveDefensor, 0.2, 0.5);
+    defender2 = newCircle(cpv(150, 350), 20, 5, "ship1.png", moveDefensor, 0.2, 0.5);
+    defender3 = newCircle(cpv(150, 500), 20, 5, "ship1.png", moveDefensor, 0.2, 0.5);
+    // Creating strikers
+    striker1 = newCircle(cpv(450,250), 20, 5, "ship1.png", moveAtacante, 0.2, 0.5);
+    striker2 = newCircle(cpv(450,450), 20, 5, "ship1.png", moveAtacante, 0.2, 0.5);
 }
 
 int is_near(float value, float target, float offset) {
@@ -87,8 +112,7 @@ int is_near(float value, float target, float offset) {
     }
     return 0;
 }
-// Exemplo de função de movimentação: move o robô em direção à bola
-// TODO: Create different funcs to move all types of robots 
+
 void moveAtacante(cpBody* body, void* data)
 {
     // Veja como obter e limitar a velocidade do robô...
@@ -156,7 +180,15 @@ void moveAtacante(cpBody* body, void* data)
     cpBodyApplyImpulseAtWorldPoint(body, delta, robotPos);
 }
 
+void moveDefensor(cpBody* body, void* data)
+{
+    
+}
 
+void moveGoalie(cpBody* body, void* data)
+{
+    
+}
 
 // Libera memória ocupada por cada corpo, forma e ambiente
 // Acrescente mais linhas caso necessário
@@ -167,9 +199,38 @@ void freeCM()
     cpShapeFree(ud->shape);
     cpBodyFree(ballBody);
 
+    //Liberar o goleiro
+    ud = cpBodyGetUserData(goalie);
+    cpShapeFree(ud->shape);
+    cpBodyFree(goalie);
+    free(ud);
+
+    // Liberar os defensores
     ud = cpBodyGetUserData(robotBody);
     cpShapeFree(ud->shape);
     cpBodyFree(robotBody);
+    free(ud);
+
+    ud = cpBodyGetUserData(defender2);
+    cpShapeFree(ud->shape);
+    cpBodyFree(defender2);
+    free(ud);
+
+    ud = cpBodyGetUserData(defender3);
+    cpShapeFree(ud->shape);
+    cpBodyFree(defender3);
+    free(ud);
+
+    // Liberar os atacantes
+    ud = cpBodyGetUserData(striker1);
+    cpShapeFree(ud->shape);
+    cpBodyFree(striker1);
+    free(ud);
+
+    ud = cpBodyGetUserData(striker2);
+    cpShapeFree(ud->shape);
+    cpBodyFree(striker2);
+    free(ud);
 
     cpShapeFree(leftWall);
     cpShapeFree(rightWall);
@@ -177,7 +238,6 @@ void freeCM()
     cpShapeFree(topWall);
 
     cpSpaceFree(space);
-    // TODO: Free all things we create
 }
 
 // Função chamada para reiniciar a simulação

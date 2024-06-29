@@ -1,6 +1,6 @@
 # This file is used to ignore files which are generated
 # ----------------------------------------------------------------------------
-
+bin/*
 *~
 *.autosave
 *.a
@@ -23,7 +23,6 @@ tags
 .DS_Store
 .directory
 *.debug
-Makefile*
 *.prl
 *.app
 moc_*.cpp

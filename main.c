@@ -12,7 +12,7 @@ void moveAtacante(cpBody* body, void* data);
 void moveDefensor(cpBody* body, void* data);
 void moveGoalie(cpBody* body, void* data);
 
-
+const int MEIO_CAMPO = LARGURA_JAN / 2;
 
 // Conveniencia
 inline jogador_data init_jogador_data(cpVect resting_pos, time time){
@@ -58,7 +58,7 @@ cpBody* striker2_left;
 cpFloat timeStep = 1.0/60.0;
 
 // Inicializa o ambiente: é chamada por init() em opengl.c, pois necessita do contexto
-// OpenGL para a leitura das imagens
+// OpenGL para a leitura das imagens,
 void initCM()
 {
     gravity = cpv(0, 100);
@@ -90,7 +90,7 @@ void initCM()
     ballBody = newCircle(cpv(512,350), 8, 1, "small_football.png", NULL, 0.2, 1, init_jogador_data(cpv(LARGURA_JAN/2 ,ALTURA_JAN/2), LEFT));
 
     // Creating goalkeeper
-    cpVect golie_pos = cpv(50, ALTURA_JAN / 2);
+    cpVect golie_pos = cpv(70, ALTURA_JAN / 2);
     goalie_left = newCircle(golie_pos, 20, 5, "ship1.png", moveGoalie, 0.2, 0.5, init_jogador_data(golie_pos, LEFT));
     // Creating defenders
     cpVect defender1_left_pos = cpv(150, 200);
@@ -99,7 +99,7 @@ void initCM()
 
     defender1_left = newCircle(defender1_left_pos, 20, 5, "ship1.png", moveDefensor, 0.2, 0.5, init_jogador_data(defender1_left_pos, LEFT));
     defender2_left = newCircle(defender2_left_pos, 20, 5, "ship1.png", moveDefensor, 0.2, 0.5, init_jogador_data(defender2_left_pos, LEFT));
-    defender3_left = newCircle(defender2_left_pos, 20, 5, "ship1.png", moveDefensor, 0.2, 0.5, init_jogador_data(defender3_left_pos, LEFT));
+    defender3_left = newCircle(defender3_left_pos, 20, 5, "ship1.png", moveDefensor, 0.2, 0.5, init_jogador_data(defender3_left_pos, LEFT));
     // Creating strikers
     cpVect s1_pos = cpv(450,250);
     cpVect s2_pos = cpv(450,450);
@@ -132,10 +132,15 @@ void moveAtacante(cpBody* body, void* data)
     cpVect robotPos = cpBodyGetPosition(body);
     cpVect ballPos  = cpBodyGetPosition(ballBody);
     cpVect goleiraPos;
-    goleiraPos.x = LARGURA_JAN - 10;
+    if(j.time == LEFT){
+        goleiraPos.x = LARGURA_JAN - 10;
+    }else {
+        goleiraPos.x = 10;
+    }
+
     goleiraPos.y = ALTURA_JAN / 2;
 
-    // 
+    // Cos de angulo entre vetores
     cpVect u;
     u.x = robotPos.x - ballPos.x;
     u.y = robotPos.y - ballPos.y;
@@ -159,7 +164,7 @@ void moveAtacante(cpBody* body, void* data)
     if (is_near(cos, -0.8, 0.2)){
         // Caso de chute ao gol
         delta = cpvadd(ballPos,pos);
-        printf("Near CHUTE:x=%d \n",delta.x);
+        //printf("Near CHUTE:x=%d \n",delta.x);
     }
     else if(is_near(cos, 0, 0.8)){
         delta = cpvadd(ballPos,pos);
@@ -167,12 +172,12 @@ void moveAtacante(cpBody* body, void* data)
         rearrange.x = -delta.x;
         rearrange.y = 0;
         delta = cpvadd(delta, rearrange);
-        printf("Near 0:x=%d \n",delta.x);
+        //printf("Near 0:x=%d \n",delta.x);
     }
     else{
         //vetor robo à resting pos
         delta = cpvadd(pos, j.resting_pos);
-        printf("Go home...:x=%d \n",delta.x);
+        //printf("Go home...:x=%d \n",delta.x);
     }
 
     // Limita o impulso em 20 unidades
@@ -180,14 +185,150 @@ void moveAtacante(cpBody* body, void* data)
     // Finalmente, aplica impulso no robô
     cpBodyApplyImpulseAtWorldPoint(body, delta, robotPos);
 }
+int is_my_ball_in_side(float ballpos_x, time my_time){
+    if((my_time == LEFT && ballpos_x < MEIO_CAMPO) || ((my_time == RIGHT) && ballpos_x > MEIO_CAMPO)){
+        return 1;
+    }
+    return 0;
+}
 
 void moveDefensor(cpBody* body, void* data)
 {
+    UserData* ud = (UserData*)data;
+    jogador_data j = ud->jogadorData; 
+    // Veja como obter e limitar a velocidade do robô...
+    cpVect vel = cpBodyGetVelocity(body);
+
+    // Limita o vetor em 50 unidades
+    vel = cpvclamp(vel, 50);
+    // E seta novamente a velocidade do corpo
+    cpBodySetVelocity(body, vel);
+
+    // Obtém a posição do robô e da bola...
+    cpVect robotPos = cpBodyGetPosition(body);
+    cpVect ballPos  = cpBodyGetPosition(ballBody);
+    int max_y = ALTURA_JAN / 2 + 50;
+    int min_y = ALTURA_JAN / 2 - 50;
+
+    cpVect goleiraPos;
+    if(j.time == RIGHT){
+        goleiraPos.x = LARGURA_JAN - 10;
+    }else {
+        goleiraPos.x = 10;
+    }
+
+    goleiraPos.y = ALTURA_JAN / 2;
+
+    // Cos de angulo entre vetores
+    cpVect u;
+    u.x = robotPos.x - ballPos.x;
+    u.y = robotPos.y - ballPos.y;
+
+    cpVect v;
+    v.x = goleiraPos.x - ballPos.x;
+    v.y = goleiraPos.y - ballPos.y;
+
+    double escalar = u.x * v.x + u.y * v.y;
+    double u_abs = sqrt(pow(u.x, 2) + pow(u.y, 2));
+    double v_abs = sqrt(pow(v.x, 2) + pow(v.y, 2));
+
+    double cos = escalar / (u_abs * v_abs);
+    
+    // Calcula um vetor do robô à bola (DELTA = B - R)
+    cpVect pos = robotPos;
+    pos.x = -robotPos.x;
+    pos.y = -robotPos.y;
+    cpVect delta;
+    delta.x = 0;
+    delta.y = 0;
+    // Fazer isso
+    // if(cos > 0 && is_my_ball_in_side(ballPos.x, j.time)){
+    //     // chutar a bola para frente
+    //     delta = cpvadd(ballBody, pos);
+    // }
+    // else {
+    //     // JOGO DE CORPO
+    //     if (j.time == RIGHT){
+
+    //     }else{
+
+    //     }
+
+    // }
+
+    // Limita o impulso em 20 unidades
+    delta = cpvmult(cpvnormalize(delta), 10);
+    // Finalmente, aplica impulso no robô
+    cpBodyApplyImpulseAtWorldPoint(body, delta, robotPos);
     
 }
 
 void moveGoalie(cpBody* body, void* data)
 {
+    UserData* ud = (UserData*)data;
+    jogador_data j = ud->jogadorData; 
+    // Veja como obter e limitar a velocidade do robô...
+    cpVect vel = cpBodyGetVelocity(body);
+//    printf("vel: %f %f", vel.x,vel.y);
+
+    // Limita o vetor em 50 unidades
+    vel = cpvclamp(vel, 50);
+    // E seta novamente a velocidade do corpo
+    cpBodySetVelocity(body, vel);
+
+    // Obtém a posição do robô e da bola...
+    cpVect robotPos = cpBodyGetPosition(body);
+    cpVect ballPos  = cpBodyGetPosition(ballBody);
+    int max_y = ALTURA_JAN / 2 + 50;
+    int min_y = ALTURA_JAN / 2 - 50;
+
+    cpVect goleiraPos;
+    if(j.time == RIGHT){
+        goleiraPos.x = LARGURA_JAN - 10;
+    }else {
+        goleiraPos.x = 10;
+    }
+
+    goleiraPos.y = ALTURA_JAN / 2;
+
+    // Cos de angulo entre vetores
+    cpVect u;
+    u.x = robotPos.x - ballPos.x;
+    u.y = robotPos.y - ballPos.y;
+
+    cpVect v;
+    v.x = goleiraPos.x - ballPos.x;
+    v.y = goleiraPos.y - ballPos.y;
+
+    double escalar = u.x * v.x + u.y * v.y;
+    double u_abs = sqrt(pow(u.x, 2) + pow(u.y, 2));
+    double v_abs = sqrt(pow(v.x, 2) + pow(v.y, 2));
+
+    double cos = escalar / (u_abs * v_abs);
+    
+    // Calcula um vetor do robô à bola (DELTA = B - R)
+    cpVect pos = robotPos;
+    pos.x = -robotPos.x;
+    pos.y = -robotPos.y;
+    cpVect delta;
+    delta.x = 0;
+    delta.y = 0;
+    if (is_near(cos, 1, 0.01)){
+        printf("Olhos na bola \n");
+    }
+    else if (robotPos.y < max_y && robotPos.y > min_y){
+        // Fechar o angulo
+        delta = cpvadd(ballPos,pos);
+        delta.x = 0;
+        printf("Fechando algulo:x=%d \n",delta.x);
+    }else {
+        delta = cpvadd(pos, j.resting_pos);
+    }
+
+    // Limita o impulso em 20 unidades
+    delta = cpvmult(cpvnormalize(delta), 10);
+    // Finalmente, aplica impulso no robô
+    cpBodyApplyImpulseAtWorldPoint(body, delta, robotPos);
     
 }
 

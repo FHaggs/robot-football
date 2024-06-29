@@ -19,6 +19,17 @@
 #define LARGURA_JAN 1024
 #define ALTURA_JAN 712
 
+typedef enum {
+    RIGHT,
+    LEFT
+} time;
+
+// Abstração maior de uma struct quem contem metadados
+typedef struct {
+    cpVect resting_pos;
+    time time;
+} jogador_data;
+
 // Definição dos parâmetros das funções de movimento
 // (tipo do ponteiro de função)
 typedef void (*bodyMotionFunc)(cpBody* body, void* data);
@@ -29,6 +40,7 @@ typedef struct
     cpFloat radius;
     cpShape* shape;
     bodyMotionFunc func;
+    jogador_data jogadorData; 
 } UserData;
 
 // Funções da interface gráfica e OpenGL

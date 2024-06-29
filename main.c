@@ -12,25 +12,19 @@ void moveAtacante(cpBody* body, void* data);
 void moveDefensor(cpBody* body, void* data);
 void moveGoalie(cpBody* body, void* data);
 
-typedef enum {
-    RIGHT,
-    LEFT
-} time;
-
-// Abstração maior de uma struct quem contem um body e outros metadados
-typedef struct {
-    cpBody* body;
-    cpVect resting_pos;
-    time time;
-} jogador;
 
 
+// Conveniencia
+inline jogador_data init_jogador_data(cpVect resting_pos, time time){
+    jogador_data j = {resting_pos, time};
+    return j;
+}
 // Prototipos
 void initCM();
 void freeCM();
 void restartCM();
 cpShape* newLine(cpVect inicio, cpVect fim, cpFloat fric, cpFloat elast);
-cpBody* newCircle(cpVect pos, cpFloat radius, cpFloat mass, char* img, bodyMotionFunc func, cpFloat fric, cpFloat elast);
+cpBody* newCircle(cpVect pos, cpFloat radius, cpFloat mass, char* img, bodyMotionFunc func, cpFloat fric, cpFloat elast, jogador_data j);
 
 // Score do jogo
 int score1 = 0;
@@ -53,12 +47,12 @@ cpBody* ballBody;
 
 
 // Robots
-cpBody* goalie;
-cpBody* robotBody;
-cpBody* defender2;
-cpBody* defender3;
-cpBody* striker1;
-cpBody* striker2;
+cpBody* goalie_left;
+cpBody* defender1_left;
+cpBody* defender2_left;
+cpBody* defender3_left;
+cpBody* striker1_left;
+cpBody* striker2_left;
 
 // Cada passo de simulação é 1/60 seg.
 cpFloat timeStep = 1.0/60.0;
@@ -93,17 +87,25 @@ void initCM()
     //   - ponteiro para a função de movimentação (chamada a cada passo, pode ser NULL)
     //   - coeficiente de fricção
     //   - coeficiente de elasticidade
-    ballBody = newCircle(cpv(512,350), 8, 1, "small_football.png", NULL, 0.2, 1);
+    ballBody = newCircle(cpv(512,350), 8, 1, "small_football.png", NULL, 0.2, 1, init_jogador_data(cpv(LARGURA_JAN/2 ,ALTURA_JAN/2), LEFT));
 
     // Creating goalkeeper
-    goalie = newCircle(cpv(50, ALTURA_JAN / 2), 20, 5, "ship1.png", moveGoalie, 0.2, 0.5);
+    cpVect golie_pos = cpv(50, ALTURA_JAN / 2);
+    goalie_left = newCircle(golie_pos, 20, 5, "ship1.png", moveGoalie, 0.2, 0.5, init_jogador_data(golie_pos, LEFT));
     // Creating defenders
-    robotBody = newCircle(cpv(150, 200), 20, 5, "ship1.png", moveDefensor, 0.2, 0.5);
-    defender2 = newCircle(cpv(150, 350), 20, 5, "ship1.png", moveDefensor, 0.2, 0.5);
-    defender3 = newCircle(cpv(150, 500), 20, 5, "ship1.png", moveDefensor, 0.2, 0.5);
+    cpVect defender1_left_pos = cpv(150, 200);
+    cpVect defender2_left_pos = cpv(150, 350);
+    cpVect defender3_left_pos = cpv(150, 500);
+
+    defender1_left = newCircle(defender1_left_pos, 20, 5, "ship1.png", moveDefensor, 0.2, 0.5, init_jogador_data(defender1_left_pos, LEFT));
+    defender2_left = newCircle(defender2_left_pos, 20, 5, "ship1.png", moveDefensor, 0.2, 0.5, init_jogador_data(defender2_left_pos, LEFT));
+    defender3_left = newCircle(defender2_left_pos, 20, 5, "ship1.png", moveDefensor, 0.2, 0.5, init_jogador_data(defender3_left_pos, LEFT));
     // Creating strikers
-    striker1 = newCircle(cpv(450,250), 20, 5, "ship1.png", moveAtacante, 0.2, 0.5);
-    striker2 = newCircle(cpv(450,450), 20, 5, "ship1.png", moveAtacante, 0.2, 0.5);
+    cpVect s1_pos = cpv(450,250);
+    cpVect s2_pos = cpv(450,450);
+
+    striker1_left = newCircle(s1_pos, 20, 5, "ship1.png", moveAtacante, 0.2, 0.5, init_jogador_data(s1_pos, LEFT));
+    striker2_left = newCircle(s2_pos, 20, 5, "ship1.png", moveAtacante, 0.2, 0.5, init_jogador_data(s2_pos, LEFT));
 }
 
 int is_near(float value, float target, float offset) {
@@ -115,6 +117,8 @@ int is_near(float value, float target, float offset) {
 
 void moveAtacante(cpBody* body, void* data)
 {
+    UserData* ud = (UserData*)data;
+    jogador_data j = ud->jogadorData; 
     // Veja como obter e limitar a velocidade do robô...
     cpVect vel = cpBodyGetVelocity(body);
 //    printf("vel: %f %f", vel.x,vel.y);
@@ -131,10 +135,6 @@ void moveAtacante(cpBody* body, void* data)
     goleiraPos.x = LARGURA_JAN - 10;
     goleiraPos.y = ALTURA_JAN / 2;
 
-    // Meio de campo
-    cpVect meioCampoPos;
-    meioCampoPos.x = LARGURA_JAN / 2;
-    meioCampoPos.y = ALTURA_JAN / 2;
     // 
     cpVect u;
     u.x = robotPos.x - ballPos.x;
@@ -162,15 +162,16 @@ void moveAtacante(cpBody* body, void* data)
         printf("Near CHUTE:x=%d \n",delta.x);
     }
     else if(is_near(cos, 0, 0.8)){
+        delta = cpvadd(ballPos,pos);
         cpVect rearrange;
-        rearrange.x = -300;
+        rearrange.x = -delta.x;
         rearrange.y = 0;
         delta = cpvadd(delta, rearrange);
-        delta = cpvadd(ballPos,pos);
         printf("Near 0:x=%d \n",delta.x);
     }
     else{
-        delta = cpvadd(delta, meioCampoPos);
+        //vetor robo à resting pos
+        delta = cpvadd(pos, j.resting_pos);
         printf("Go home...:x=%d \n",delta.x);
     }
 
@@ -200,36 +201,36 @@ void freeCM()
     cpBodyFree(ballBody);
 
     //Liberar o goleiro
-    ud = cpBodyGetUserData(goalie);
+    ud = cpBodyGetUserData(goalie_left);
     cpShapeFree(ud->shape);
-    cpBodyFree(goalie);
+    cpBodyFree(goalie_left);
     free(ud);
 
     // Liberar os defensores
-    ud = cpBodyGetUserData(robotBody);
+    ud = cpBodyGetUserData(defender1_left);
     cpShapeFree(ud->shape);
-    cpBodyFree(robotBody);
+    cpBodyFree(defender1_left);
     free(ud);
 
-    ud = cpBodyGetUserData(defender2);
+    ud = cpBodyGetUserData(defender2_left);
     cpShapeFree(ud->shape);
-    cpBodyFree(defender2);
+    cpBodyFree(defender2_left);
     free(ud);
 
-    ud = cpBodyGetUserData(defender3);
+    ud = cpBodyGetUserData(defender3_left);
     cpShapeFree(ud->shape);
-    cpBodyFree(defender3);
+    cpBodyFree(defender3_left);
     free(ud);
 
     // Liberar os atacantes
-    ud = cpBodyGetUserData(striker1);
+    ud = cpBodyGetUserData(striker1_left);
     cpShapeFree(ud->shape);
-    cpBodyFree(striker1);
+    cpBodyFree(striker1_left);
     free(ud);
 
-    ud = cpBodyGetUserData(striker2);
+    ud = cpBodyGetUserData(striker2_left);
     cpShapeFree(ud->shape);
-    cpBodyFree(striker2);
+    cpBodyFree(striker2_left);
     free(ud);
 
     cpShapeFree(leftWall);
@@ -278,7 +279,7 @@ cpShape* newLine(cpVect inicio, cpVect fim, cpFloat fric, cpFloat elast)
 }
 
 // Cria e adiciona um novo corpo dinâmico, com formato circular
-cpBody* newCircle(cpVect pos, cpFloat radius, cpFloat mass, char* img, bodyMotionFunc func, cpFloat fric, cpFloat elast)
+cpBody* newCircle(cpVect pos, cpFloat radius, cpFloat mass, char* img, bodyMotionFunc func, cpFloat fric, cpFloat elast, jogador_data j)
 {
     // Primeiro criamos um cpBody para armazenar as propriedades fisicas do objeto
     // Estas incluem: massa, posicao, velocidade, angulo, etc do objeto
@@ -307,6 +308,7 @@ cpBody* newCircle(cpVect pos, cpFloat radius, cpFloat mass, char* img, bodyMotio
     newUserData->radius = radius;
     newUserData->shape= newShape;
     newUserData->func = func;
+    newUserData->jogadorData = j;
     cpBodySetUserData(newBody, newUserData);
     printf("newCircle: loaded img %s\n", img);
     return newBody;

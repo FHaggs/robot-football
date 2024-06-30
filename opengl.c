@@ -210,7 +210,7 @@ void drawScore()
         if(score1 == score2)
             sprintf(strgameover, "Final: EMPATE");
         else
-            sprintf(strgameover, "Final: vencedor é %s com %d gols", score1 > score2? "JOGADOR 1" : "JOGADOR 2",
+            sprintf(strgameover, "Final: vencedor e %s com %d gols", score1 > score2? "JOGADOR 1" : "JOGADOR 2",
                 score1 > score2 ? score1 : score2);
         glutBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, strgameover);
     }

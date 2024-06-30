@@ -26,7 +26,7 @@ void freeCM();
 void restartCM();
 cpShape *newLine(cpVect inicio, cpVect fim, cpFloat fric, cpFloat elast);
 cpBody *newCircle(cpVect pos, cpFloat radius, cpFloat mass, char *img, bodyMotionFunc func, cpFloat fric, cpFloat elast, body_data j);
-int is_my_ball_in_side(float ballpos_x, team my_time);
+int is_in_my_side(float x, team my_time);
 // Score do jogo
 int score1 = 0;
 int score2 = 0;
@@ -80,19 +80,17 @@ void initCM()
     // Descomente a linha abaixo se quiser ver o efeito da gravidade!
     // cpSpaceSetGravity(space, gravity);
 
-
     // Adiciona 4 linhas estáticas para formarem as "paredes" do ambiente
-    leftWall = newLine(cpv(0, 0), cpv(0, ALTURA_JAN), 0, 1.0);
+    leftWall = newLine(cpv(10, 0), cpv(10, ALTURA_JAN), 0, 1.0);
     rightWall = newLine(cpv(LARGURA_JAN, 0), cpv(LARGURA_JAN, ALTURA_JAN), 0, 1.0);
     bottomWall = newLine(cpv(0, 0), cpv(LARGURA_JAN, 0), 0, 1.0);
     topWall = newLine(cpv(0, ALTURA_JAN), cpv(LARGURA_JAN, ALTURA_JAN), 0, 1.0);
 
-    cornerWall_left_bottom = newLine(cpv(0, ALTURA_JAN -50), cpv(50, ALTURA_JAN), 0, 2.0);
+    cornerWall_left_bottom = newLine(cpv(0, ALTURA_JAN - 50), cpv(50, ALTURA_JAN), 0, 2.0);
     cornerWall_left_top = newLine(cpv(0, 50), cpv(50, 0), 0, 2.0);
-    
-    cornerWall_right_bottom = newLine(cpv(LARGURA_JAN, ALTURA_JAN -50), cpv(LARGURA_JAN -50, ALTURA_JAN), 0, 2.0);
-    cornerWall_right_top = newLine(cpv(LARGURA_JAN -50, 0), cpv(LARGURA_JAN, ALTURA_JAN -50), 0, 2.0);
 
+    cornerWall_right_bottom = newLine(cpv(LARGURA_JAN, ALTURA_JAN - 50), cpv(LARGURA_JAN - 50, ALTURA_JAN), 0, 2.0);
+    cornerWall_right_top = newLine(cpv(LARGURA_JAN - 50, 0), cpv(LARGURA_JAN, ALTURA_JAN - 50), 0, 2.0);
 
     // Agora criamos a bola...
     // Os parâmetros são:
@@ -104,60 +102,43 @@ void initCM()
     //   - coeficiente de fricção
     //   - coeficiente de elasticidade
     ballBody = newCircle(cpv(512, 350), 8, 1, "small_football.png", check_goal, 0.2, 1, init_body_data(cpv(512, 350), LEFT, 0));
-
-    // Creating goalkeeper
+    // LEFT
     cpVect golie_pos = cpv(70, ALTURA_JAN / 2);
-    goalie_left = newCircle(golie_pos, 20, 5, "emacs.png", moveGoalie, 0.2, 0.5, init_body_data(golie_pos, LEFT, 0));
-    // Creating defenders
     cpVect defender1_left_pos = cpv(150, 200);
     cpVect defender2_left_pos = cpv(150, 350);
     cpVect defender3_left_pos = cpv(150, 500);
+    cpVect s1_pos = cpv(440, 250);
+    cpVect s2_pos = cpv(450, 450);
+    // RIGTH
+    cpVect golie_pos_r = cpv(LARGURA_JAN - 70, ALTURA_JAN / 2);
+    cpVect defender1_right_pos = cpv(LARGURA_JAN - 150, 200);
+    cpVect defender2_right_pos = cpv(LARGURA_JAN - 150, 350);
+    cpVect defender3_right_pos = cpv(LARGURA_JAN - 150, 500);
+    cpVect s1_pos_r = cpv(LARGURA_JAN - 440, 250);
+    cpVect s2_pos_r = cpv(LARGURA_JAN - 450, 450);
 
     defender1_left = newCircle(defender1_left_pos, 20, 5, "emacs.png", moveDefensor, 0.2, 0.5, init_body_data(defender1_left_pos, LEFT, 1));
     defender2_left = newCircle(defender2_left_pos, 20, 5, "emacs.png", moveDefensor, 0.2, 0.5, init_body_data(defender2_left_pos, LEFT, 2));
     defender3_left = newCircle(defender3_left_pos, 20, 5, "emacs.png", moveDefensor, 0.2, 0.5, init_body_data(defender3_left_pos, LEFT, 3));
+    
+    goalie_left = newCircle(golie_pos, 20, 5, "emacs.png", moveGoalie, 0.2, 0.5, init_body_data(golie_pos, LEFT, 0));
+
     // Creating strikers
-    cpVect s1_pos = cpv(440, 250);
-    cpVect s2_pos = cpv(450, 450);
 
     striker1_left = newCircle(s1_pos, 20, 5, "emacs.png", moveAtacante, 0.2, 0.5, init_body_data(s1_pos, LEFT, 1));
     striker2_left = newCircle(s2_pos, 20, 5, "emacs.png", moveAtacante, 0.2, 0.5, init_body_data(s2_pos, LEFT, 2));
 
-    // RIGTH
-    cpVect golie_pos_r = cpv(LARGURA_JAN-70, ALTURA_JAN / 2);
     goalie_right = newCircle(golie_pos_r, 20, 5, "vim.png", moveGoalie, 0.2, 0.5, init_body_data(golie_pos_r, RIGHT, 0));
     // Creating defenders
-    cpVect defender1_right_pos = cpv(LARGURA_JAN-150, 200);
-    cpVect defender2_right_pos = cpv(LARGURA_JAN-150, 350);
-    cpVect defender3_right_pos = cpv(LARGURA_JAN-150, 500);
 
     defender1_right = newCircle(defender1_right_pos, 20, 5, "vim.png", moveDefensor, 0.2, 0.5, init_body_data(defender1_right_pos, RIGHT, 1));
     defender2_right = newCircle(defender2_right_pos, 20, 5, "vim.png", moveDefensor, 0.2, 0.5, init_body_data(defender2_right_pos, RIGHT, 2));
     defender3_right = newCircle(defender3_right_pos, 20, 5, "vim.png", moveDefensor, 0.2, 0.5, init_body_data(defender3_right_pos, RIGHT, 3));
     // Creating strikers
-    cpVect s1_pos_r = cpv(LARGURA_JAN-440, 250);
-    cpVect s2_pos_r = cpv(LARGURA_JAN-450, 450);
 
     striker1_right = newCircle(s1_pos_r, 20, 5, "vim.png", moveAtacante, 0.2, 0.5, init_body_data(s1_pos_r, RIGHT, 1));
     striker2_right = newCircle(s2_pos_r, 20, 5, "vim.png", moveAtacante, 0.2, 0.5, init_body_data(s2_pos_r, RIGHT, 2));
 }
-void check_goal(cpBody *body, void *data){
-    UserData *ud = (UserData *)data;
-    body_data j = ud->BodyData;
-
-    cpVect ballPos = cpBodyGetPosition(body);
-    cpVect goleiraPos_left;
-    cpVect goleiraPos_right;
-
-    goleiraPos_left.y = ALTURA_JAN / 2;
-    goleiraPos_left.x = LARGURA_JAN - 10;
-
-    goleiraPos_right.y = ALTURA_JAN / 2;
-    goleiraPos_right.x = 10;
-
-    
-}
-
 int is_near(float value, float target, float offset)
 {
     if ((value >= target - offset) && (value <= target + offset))
@@ -166,7 +147,72 @@ int is_near(float value, float target, float offset)
     }
     return 0;
 }
-int get_motivacao(int min, int max){
+void pos_restart(){
+    cpVect golie_pos = cpv(70, ALTURA_JAN / 2);
+    cpVect defender1_left_pos = cpv(150, 200);
+    cpVect defender2_left_pos = cpv(150, 350);
+    cpVect defender3_left_pos = cpv(150, 500);
+    cpVect s1_pos = cpv(440, 250);
+    cpVect s2_pos = cpv(450, 450);
+    // RIGTH
+    cpVect golie_pos_r = cpv(LARGURA_JAN - 70, ALTURA_JAN / 2);
+    cpVect defender1_right_pos = cpv(LARGURA_JAN - 150, 200);
+    cpVect defender2_right_pos = cpv(LARGURA_JAN - 150, 350);
+    cpVect defender3_right_pos = cpv(LARGURA_JAN - 150, 500);
+    cpVect s1_pos_r = cpv(LARGURA_JAN - 440, 250);
+    cpVect s2_pos_r = cpv(LARGURA_JAN - 450, 450);
+
+    cpBodySetPosition(goalie_left, golie_pos);
+    cpBodySetPosition(goalie_right, golie_pos_r);
+
+    cpBodySetPosition(defender1_left, defender1_left_pos);
+    cpBodySetPosition(defender2_left, defender2_left_pos);
+    cpBodySetPosition(defender3_left, defender3_left_pos);
+
+    cpBodySetPosition(defender1_right, defender1_right_pos);
+    cpBodySetPosition(defender2_right, defender2_right_pos);
+    cpBodySetPosition(defender3_right, defender3_right_pos);
+
+    cpBodySetPosition(striker1_left, s1_pos);
+    cpBodySetPosition(striker2_left, s2_pos);
+
+    cpBodySetPosition(striker1_right, s1_pos_r);
+    cpBodySetPosition(striker2_right, s2_pos_r);
+    cpBodySetPosition(ballBody, cpv(512, 350));
+
+}
+
+void check_goal(cpBody *body, void *data)
+{
+    UserData *ud = (UserData *)data;
+    body_data j = ud->BodyData;
+
+    cpVect ballPos = cpBodyGetPosition(body);
+
+    cpVect goleiraPos_left = cpv(LARGURA_JAN - GOAL_WIDTH, ALTURA_JAN / 2);
+    cpVect goleiraPos_right = cpv(GOAL_WIDTH, ALTURA_JAN / 2);
+    //printf("BALL X=%f Y=%f\n", ballPos.x, ballPos.y);
+
+    if (is_near(ballPos.x, goleiraPos_left.x, GOAL_WIDTH) && is_near(ballPos.y, goleiraPos_left.y, GOAL_HEIGHT / 2))
+    {
+        score1++;
+        if(score1 >= 2){
+            gameOver = 1;
+        }
+        pos_restart();
+    }
+    else if (is_near(ballPos.x, goleiraPos_right.x, GOAL_WIDTH / 2) && is_near(ballPos.y, goleiraPos_right.y, GOAL_HEIGHT / 2))
+    {
+        score2++;
+        if(score2 >= 2){
+            gameOver = 1;
+        }
+        pos_restart();
+    }
+}
+
+int get_motivacao(int min, int max)
+{
     return min + rand() % (max - min + 1);
 }
 double euclidean_distance(cpVect point1, cpVect point2)
@@ -183,7 +229,7 @@ void moveAtacante(cpBody *body, void *data)
     //    printf("vel: %f %f", vel.x,vel.y);
 
     // Limita o vetor no fator motivacao dele
-    vel = cpvclamp(vel, get_motivacao(50, 80));
+    vel = cpvclamp(vel, get_motivacao(100, 160));
     // E seta novamente a velocidade do corpo
     cpBodySetVelocity(body, vel);
 
@@ -192,22 +238,31 @@ void moveAtacante(cpBody *body, void *data)
     cpVect ballPos = cpBodyGetPosition(ballBody);
 
     cpVect striker_friend_pos;
-    if(j.team == LEFT){
-        if(j.id_number == 1){
+    if (j.team == LEFT)
+    {
+        if (j.id_number == 1)
+        {
             cpVect aux = cpBodyGetPosition(striker2_left);
             striker_friend_pos.x = aux.x;
             striker_friend_pos.y = aux.y;
-        }else{
+        }
+        else
+        {
             cpVect aux = cpBodyGetPosition(striker1_left);
             striker_friend_pos.x = aux.x;
             striker_friend_pos.y = aux.y;
         }
-    }else{
-        if(j.id_number == 1){
+    }
+    else
+    {
+        if (j.id_number == 1)
+        {
             cpVect aux = cpBodyGetPosition(striker2_right);
             striker_friend_pos.x = aux.x;
             striker_friend_pos.y = aux.y;
-        }else{
+        }
+        else
+        {
             cpVect aux = cpBodyGetPosition(striker1_right);
             striker_friend_pos.x = aux.x;
             striker_friend_pos.y = aux.y;
@@ -247,32 +302,37 @@ void moveAtacante(cpBody *body, void *data)
     pos.y = -robotPos.y;
     cpVect delta;
     // printf("forca: %f \n", delta.x);
-    if (is_near(cos, -0.8, 0.2) && !(is_my_ball_in_side(ballPos.x, j.team)))
+    if (is_near(cos, -0.8, 0.2) && !(is_in_my_side(ballPos.x, j.team)))
     {
         // Caso de chute ao gol
         double my_friends_distance = euclidean_distance(ballPos, striker_friend_pos);
         double my_distance = euclidean_distance(ballPos, robotPos);
-        if (my_distance < my_friends_distance){
+        if (my_distance < my_friends_distance)
+        {
             delta = cpvadd(ballPos, pos);
-        }else{
+        }
+        else
+        {
             cpVect advanced_pos = j.resting_pos;
             advanced_pos.x = ballPos.x;
             delta = cpvadd(pos, advanced_pos);
         }
     }
-    else if (is_near(cos, 0, 0.8) && !(is_my_ball_in_side(ballPos.x, j.team)))
+    else if (is_near(cos, 0, 0.8) && !(is_in_my_side(ballPos.x, j.team)))
     {
-        if(get_motivacao(1, 10) >= 8){
+        if (get_motivacao(1, 10) >= 8)
+        {
             // O atacante pode tentar um chute arriscado, mesmo com angulo ruim
             delta = cpvadd(ballPos, pos);
-        }else{
+        }
+        else
+        {
             delta = cpvadd(ballPos, pos);
             cpVect rearrange;
             rearrange.x = -delta.x;
             rearrange.y = 0;
             delta = cpvadd(delta, rearrange);
         }
-
     }
     else
     {
@@ -286,15 +346,14 @@ void moveAtacante(cpBody *body, void *data)
     // Finalmente, aplica impulso no robô
     cpBodyApplyImpulseAtWorldPoint(body, delta, robotPos);
 }
-int is_my_ball_in_side(float ballpos_x, team my_time)
+int is_in_my_side(float x, team my_time)
 {
-    if ((my_time == LEFT && ballpos_x < MEIO_CAMPO) || ((my_time == RIGHT) && ballpos_x > MEIO_CAMPO))
+    if ((my_time == LEFT && x < MEIO_CAMPO) || ((my_time == RIGHT) && x > MEIO_CAMPO))
     {
         return 1;
     }
     return 0;
 }
-
 
 void moveDefensor(cpBody *body, void *data)
 {
@@ -304,7 +363,7 @@ void moveDefensor(cpBody *body, void *data)
     cpVect vel = cpBodyGetVelocity(body);
 
     // Limita o vetor em 50 unidades
-    vel = cpvclamp(vel, get_motivacao(30, 50));
+    vel = cpvclamp(vel, get_motivacao(100, 140));
     // E seta novamente a velocidade do corpo
     cpBodySetVelocity(body, vel);
 
@@ -351,14 +410,15 @@ void moveDefensor(cpBody *body, void *data)
     pos.x = -robotPos.x;
     pos.y = -robotPos.y;
     cpVect delta;
-    if (is_my_ball_in_side(ballPos.x, j.team))
+    if (is_in_my_side(ballPos.x, j.team) && is_in_my_side(robotPos.x, j.team))
     {
         if (cos > 0.2)
         {
             // chutar a bola para frente
             delta = cpvadd(ballPos, pos);
         }
-        else{
+        else
+        {
             if (j.team == LEFT)
             {
                 double distance1 = euclidean_distance(ballPos, striker_right_1_pos);
@@ -367,17 +427,23 @@ void moveDefensor(cpBody *body, void *data)
                 {
                     // (DELTA = S - R)
                     delta = cpvadd(striker_right_1_pos, pos);
-                }else{
+                }
+                else
+                {
                     delta = cpvadd(striker_right_2_pos, pos);
                 }
-            }else{
+            }
+            else
+            {
                 double distance1 = euclidean_distance(ballPos, striker_left_1_pos);
                 double distance2 = euclidean_distance(ballPos, striker_left_2_pos);
                 if (distance1 < distance2)
                 {
                     // (DELTA = S - R)
                     delta = cpvadd(striker_left_1_pos, pos);
-                }else{
+                }
+                else
+                {
                     delta = cpvadd(striker_left_2_pos, pos);
                 }
             }
@@ -404,7 +470,7 @@ void moveGoalie(cpBody *body, void *data)
     //    printf("vel: %f %f", vel.x,vel.y);
 
     // Limita o vetor em 50 unidades
-    vel = cpvclamp(vel, get_motivacao(50, 70));
+    vel = cpvclamp(vel, get_motivacao(100, 140));
     // E seta novamente a velocidade do corpo
     cpBodySetVelocity(body, vel);
 
@@ -550,16 +616,15 @@ void freeCM()
     cpShapeFree(cornerWall_right_bottom);
     cpShapeFree(cornerWall_right_top);
 
-
     cpSpaceFree(space);
 }
 
 // Função chamada para reiniciar a simulação
 void restartCM()
 {
-    // Escreva o código para reposicionar os jogadores, ressetar o score, etc.
-
-    // Não esqueça de ressetar a variável gameOver!
+    pos_restart();
+    score1 = 0;
+    score2 = 0;
     gameOver = 0;
 }
 
@@ -576,7 +641,6 @@ int main(int argc, char **argv)
     // Inicialização da janela gráfica
     init(argc, argv);
     srand((unsigned int)time(NULL));
-
 
     // Não retorna... a partir daqui, interação via teclado e mouse apenas, na janela gráfica
     glutMainLoop();

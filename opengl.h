@@ -18,6 +18,8 @@
 
 #define LARGURA_JAN 1024
 #define ALTURA_JAN 712
+#define GOAL_WIDTH 30
+#define GOAL_HEIGHT 55
 
 typedef enum {
     RIGHT,

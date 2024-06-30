@@ -22,13 +22,14 @@
 typedef enum {
     RIGHT,
     LEFT
-} time;
+} team;
 
 // Abstração maior de uma struct quem contem metadados
 typedef struct {
     cpVect resting_pos;
-    time time;
-} jogador_data;
+    team team;
+    int id_number;
+} body_data;
 
 // Definição dos parâmetros das funções de movimento
 // (tipo do ponteiro de função)
@@ -40,7 +41,7 @@ typedef struct
     cpFloat radius;
     cpShape* shape;
     bodyMotionFunc func;
-    jogador_data jogadorData; 
+    body_data BodyData; 
 } UserData;
 
 // Funções da interface gráfica e OpenGL
